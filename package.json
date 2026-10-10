@@ -1,0 +1,96 @@
+{
+  "name": "dsh-purpose-router",
+  "version": "0.1.0",
+  "description": "用途模型路由：在 DeepSeek Harness 桌面版中，按任务调用你指定的辅助模型。",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "src/catalog.mjs",
+    "src/router.mjs",
+    "src/response.mjs",
+    "src/client.mjs",
+    "scripts/build-client.mjs",
+    "config.example.json",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "docs",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-plugin-manager",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-connection"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-fs": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "~3.18.4",
+    "@deepseek-ai/dsh-client-connection": "0.2.0-rc.2"
+  },
+  "scripts": {
+    "test": "node scripts/run-tests.mjs",
+    "test:native": "node --loader ./test/runtime-loader.mjs --test test/native.test.mjs",
+    "test:desktop": "node --loader ./test/runtime-loader.mjs --test test/desktop.test.mjs test/settings-wire.test.mjs",
+    "build": "node scripts/build-client.mjs",
+    "test:core": "node --test test/router.test.mjs test/response.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-fs": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "~3.18.4",
+    "@deepseek-ai/dsh-client-connection": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-config-editor": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "0.2.0-rc.2",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "jsdom": "26.1.0",
+    "@deepseek-ai/dsh-client-store": "0.2.0-rc.2",
+    "immer": "10.1.1",
+    "zustand": "4.4.7"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Okazaki01/dsh-purpose-router.git"
+  },
+  "homepage": "https://github.com/Okazaki01/dsh-purpose-router#readme",
+  "bugs": {
+    "url": "https://github.com/Okazaki01/dsh-purpose-router/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "desktop-plugin",
+    "model-routing",
+    "vision"
+  ]
+}

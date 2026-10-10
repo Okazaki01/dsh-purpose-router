@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "defaultPurpose": "general",
+  "limits": {
+    "maxPromptChars": 60000,
+    "maxImages": 6,
+    "maxImageBytes": 10485760,
+    "maxResponseBytes": 4194304
+  },
+  "models": [
+    {
+      "id": "text-model",
+      "label": "日常文字模型",
+      "enabled": false,
+      "protocol": "openai-chat",
+      "url": "https://YOUR-PROVIDER.example/v1/chat/completions",
+      "model": "YOUR-TEXT-MODEL",
+      "capabilities": [
+        "text"
+      ],
+      "apiKeyEnv": "",
+      "timeoutMs": 300000,
+      "requestParams": {
+        "max_tokens": 4096
+      },
+      "headerEnv": {},
+      "responseMode": "stream"
+    },
+    {
+      "id": "vision-model",
+      "label": "视觉理解模型",
+      "enabled": false,
+      "protocol": "openai-chat",
+      "url": "https://YOUR-PROVIDER.example/v1/chat/completions",
+      "model": "YOUR-VISION-MODEL",
+      "capabilities": [
+        "text",
+        "vision"
+      ],
+      "apiKeyEnv": "",
+      "timeoutMs": 600000,
+      "requestParams": {
+        "max_tokens": 4096
+      },
+      "headerEnv": {},
+      "responseMode": "stream"
+    },
+    {
+      "id": "reasoning-model",
+      "label": "规划与复杂推理模型",
+      "enabled": false,
+      "protocol": "openai-chat",
+      "url": "https://YOUR-PROVIDER.example/v1/chat/completions",
+      "model": "YOUR-REASONING-MODEL",
+      "capabilities": [
+        "text",
+        "reasoning",
+        "code"
+      ],
+      "apiKeyEnv": "",
+      "timeoutMs": 600000,
+      "requestParams": {
+        "max_tokens": 8192
+      },
+      "headerEnv": {},
+      "responseMode": "stream"
+    }
+  ],
+  "purposes": [
+    {
+      "id": "vision",
+      "label": "识图理解",
+      "description": "读截图、理解参考图、分析图表与视觉布局。 根据提供的真实图片回答。区分可见事实和推断；看不清或资料不足时明确说明。",
+      "keywords": [
+        "识图",
+        "截图",
+        "参考图",
+        "图表",
+        "图片",
+        "image",
+        "screenshot"
+      ],
+      "priority": 100,
+      "requires": [
+        "vision"
+      ],
+      "modelIds": [
+        "vision-model"
+      ],
+      "allowFallback": false,
+      "systemPrompt": "读截图、理解参考图、分析图表与视觉布局。 根据提供的真实图片回答。区分可见事实和推断；看不清或资料不足时明确说明。"
+    },
+    {
+      "id": "planning",
+      "label": "规划与推理",
+      "description": "复杂任务拆解、技术方案比较、根因推理。 围绕指定目标给出具体、可检查的分析，说明关键假设。",
+      "keywords": [
+        "规划",
+        "方案",
+        "推理",
+        "根因",
+        "plan",
+        "reason"
+      ],
+      "priority": 40,
+      "requires": [
+        "text"
+      ],
+      "modelIds": [
+        "reasoning-model"
+      ],
+      "allowFallback": false,
+      "systemPrompt": "复杂任务拆解、技术方案比较、根因推理。 围绕指定目标给出具体、可检查的分析，说明关键假设。"
+    },
+    {
+      "id": "coding",
+      "label": "代码辅助",
+      "description": "针对指定代码片段给出实现与问题分析。 只分析提供的代码和目标，不声称已运行测试或修改文件。",
+      "keywords": [
+        "代码",
+        "编程",
+        "bug",
+        "code",
+        "debug"
+      ],
+      "priority": 30,
+      "requires": [
+        "text"
+      ],
+      "modelIds": [
+        "reasoning-model"
+      ],
+      "allowFallback": false,
+      "systemPrompt": "针对指定代码片段给出实现与问题分析。 只分析提供的代码和目标，不声称已运行测试或修改文件。"
+    },
+    {
+      "id": "general",
+      "label": "日常文字",
+      "description": "普通总结、改写和文本辅助。 准确、简洁地完成指定文本任务。",
+      "keywords": [],
+      "priority": 0,
+      "requires": [
+        "text"
+      ],
+      "modelIds": [
+        "text-model"
+      ],
+      "allowFallback": false,
+      "systemPrompt": "普通总结、改写和文本辅助。 准确、简洁地完成指定文本任务。"
+    }
+  ]
+}

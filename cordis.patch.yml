@@ -1,0 +1,4 @@
+- insert:
+    - id: purpose-model-router
+      name: dsh-purpose-router
+      config: {}

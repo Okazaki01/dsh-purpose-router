@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+import {resolveConfig} from '@deepseek-ai/cordis';
+import {createRequire} from 'node:module';
+import {join} from 'node:path';
+import {runInNewContext} from 'node:vm';
+
+const root=process.env.DSH_TEST_BUNDLE;
+assert.ok(root);
+const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
+assert.equal(manifest.bin,undefined);
+assert.equal(manifest.dsh.bundle.patch,'./cordis.patch.yml');
+const host=await import(pathToFileURL(join(root,'index.js')));
+assert.equal(resolveConfig(host,{}).enabled.get(),true);
+assert.equal(resolveConfig(host,{}).catalogJson.get(),'');
+const sample=JSON.parse(await readFile(join(root,'config.example.json'),'utf8'));
+assert.ok(sample.models.every(m=>!m.enabled));
+assert.equal(resolveConfig(host,{catalogJson:JSON.stringify(sample)}).catalogJson.get(),JSON.stringify(sample));
+const require=createRequire(join(process.env.DSH_TEST_RUNTIME,'package.json'));
+let registered;
+runInNewContext(await readFile(join(root,'client.js'),'utf8'),{window:{__ModuleLoader__:{load:spec=>registered=spec}},console,structuredClone,TextEncoder,setTimeout,clearTimeout,URL});
+assert.equal(registered.id,manifest.name);
+const client=registered.factory(require);
+assert.equal(typeof client.RouterSettingsPage,'function');
+assert.equal(typeof client.RouterConfigPage,'function');
+assert.ok((await readFile(join(root,'cordis.patch.yml'),'utf8')).includes('id: purpose-model-router'));
+console.log('PASS: 打包产物可加载 Host、桌面设置/配置组件，默认模型停用，无 CLI 入口。');

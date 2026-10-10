@@ -1,0 +1,61 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createRequire} from 'node:module';
+import {runInNewContext} from 'node:vm';
+import {Context} from '@deepseek-ai/cordis';
+import {Loader} from '@deepseek-ai/cordis-plugin-loader';
+import {mountRootInclude,readProfilePatches} from '@deepseek-ai/dsh-app-boot';
+import {ConfigEditor} from '@deepseek-ai/dsh-config-editor';
+import {SettingsForms} from '@deepseek-ai/dsh-settings';
+import {SystemPrompt} from '@deepseek-ai/dsh-system-prompt';
+import {ToolRuntime} from '@deepseek-ai/dsh-tools';
+import {FixtureWebServer,fixtureConnection} from './web-server-fixture.mjs';
+const require=createRequire(join(process.env.DSH_TEST_RUNTIME,'package.json'));
+
+test('真实 Host 设置投影 → JSON 传输 → 官方桌面 ConfigForms：就绪、保存、拒绝损坏、重读',async()=>{
+ const dir=join(process.cwd(),'qa','settings-wire-ux-01');await mkdir(join(dir,'home'),{recursive:true});
+ const rootPath=join(dir,'cordis.json'),patchPath=join(dir,'cordis.patch.yml');
+ const row={id:'purpose-model-router',name:pathToFileURL(join(process.cwd(),'index.js')).href,config:{}};
+ const fixtureDir=join(dir,'node_modules','qa-router-fixture');await mkdir(fixtureDir,{recursive:true});
+ await writeFile(join(fixtureDir,'package.json'),JSON.stringify({name:'qa-router-fixture',version:'0.0.0',main:'unused.js',dsh:{bundle:{patch:'./cordis.patch.yml'}}}));
+ await writeFile(join(fixtureDir,'cordis.patch.yml'),JSON.stringify([{insert:[row]}]));
+ await writeFile(join(dir,'package.json'),JSON.stringify({name:'isolated-purpose-router-qa',dependencies:{'qa-router-fixture':'file:./node_modules/qa-router-fixture'},dsh:{profile:{bundles:['qa-router-fixture']}}}));
+ await writeFile(rootPath,'[]');await writeFile(patchPath,'[]\n');
+ const host=new Context();await host.plugin(Loader);
+ host.provide('profileContext');host.set('profileContext',{name:'qa',home:join(dir,'home'),dir,patchPath,installAnchor:join(dir,'package.json'),overlays:[]});
+ await host.plugin(SystemPrompt,{includeRuntimeContext:false});await host.plugin(ToolRuntime,{mode:'native'});
+ await host.plugin(FixtureWebServer);
+ await host.plugin(fixtureConnection,{isAuthenticated:()=>true});
+ host.provide('fs');host.set('fs',{});
+ await mountRootInclude(host,rootPath,readProfilePatches('dsh',host.profileContext));await host.loader.await();
+ await host.plugin(ConfigEditor);await host.plugin(SettingsForms);
+ const rows=host.settings.describe({redactSecrets:true});assert.ok(rows.find(x=>x.ns==='purpose-model-router'),'真实 Host 必须发布本插件配置');
+ const browser=new Context();let onChanged;const remote={settings:{
+  async describe(){return {ok:true,value:JSON.parse(JSON.stringify({writable:true,namespaces:host.settings.describe({redactSecrets:true})}))};},
+  async mutate(ns,ops,revision){try{await host.settings.mutate(ns,ops,revision);return {ok:true,value:JSON.parse(JSON.stringify(host.settings.describe({redactSecrets:true}).find(row=>row.ns===ns)))};}catch(e){console.log('Host mutation:',e.message);return {ok:false,error:{message:e.message}};}}
+ },$host:{isLoopback:true},$on:(_event,fn)=>{onChanged=fn;return ()=>{};}};
+ browser.provide('remote');browser.set('remote',remote);browser.provide('remote.settings');browser.set('remote.settings',remote.settings);
+ let registration;runInNewContext(await readFile(join(process.env.DSH_TEST_RUNTIME,'node_modules/@deepseek-ai/dsh-client-ui-settings/lib/client.js'),'utf8'),{window:{__ModuleLoader__:{load:r=>registration=r}},console,structuredClone,TextEncoder,setTimeout,clearTimeout,URL},{contextCodeGeneration:{strings:false,wasm:false}});
+ await browser.plugin(registration.factory(require));await browser.configForms.describe().load();
+ const form=browser.configForms.get('purpose-model-router');assert.equal(form.getSnapshot().status,'ready');
+ const sample=JSON.parse(await readFile('config.example.json','utf8'));
+ assert.equal(await form.mutate([{op:'set',path:['catalogJson'],value:JSON.stringify(sample)}],form.getSnapshot().revision),true);
+ assert.equal(form.getSnapshot().status,'ready');assert.equal(JSON.parse(form.getSnapshot().value.catalogJson).version,1);
+ assert.equal(await form.mutate([{op:'set',path:['apiKeys','text-model'],value:'qa-only-write-key'}],form.getSnapshot().revision),true);
+ assert.ok(!JSON.stringify(form.getSnapshot()).includes('qa-only-write-key'),'官方桌面表单不能回传 Key 原文');
+ assert.ok((await readFile(patchPath,'utf8')).includes('qa-only-write-key'),'Key 经真实 Host 持久化');
+ assert.equal(await form.mutate([{op:'set',path:['catalogJson'],value:JSON.stringify(sample)}],form.getSnapshot().revision),true);
+ assert.ok((await readFile(patchPath,'utf8')).includes('qa-only-write-key'),'普通保存不应清除已保存 Key');
+ const before=await readFile(patchPath,'utf8');
+ assert.equal(await form.mutate([{op:'set',path:['catalogJson'],value:'{bad'}],form.getSnapshot().revision),false);
+ assert.equal(await readFile(patchPath,'utf8'),before,'损坏保存必须保留磁盘原配置');
+ const wrong=structuredClone(sample);wrong.purposes[0].modelIds=['unknown'];
+ assert.equal(await form.mutate([{op:'set',path:['catalogJson'],value:JSON.stringify(wrong)}],form.getSnapshot().revision),false);
+ assert.equal(await readFile(patchPath,'utf8'),before);
+ await onChanged();await browser.configForms.describe().load();assert.equal(form.getSnapshot().status,'ready');
+ assert.deepEqual(JSON.parse(form.getSnapshot().value.catalogJson),sample);
+ await browser.fiber.dispose();await host.fiber.dispose();
+});

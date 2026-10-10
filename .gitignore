@@ -1,0 +1,18 @@
+node_modules/
+qa/
+*.tgz
+*.tmp
+*.log
+.env
+.env.*
+*.local.json
+coverage/
+# Retained local experiments; not part of the desktop release.
+bin/
+ui/
+src/client-bridge-history.mjs
+src/config-store.mjs
+src/editor-server.mjs
+scripts/build-form.mjs
+test/inspect-asar.mjs
+test/schema-wire-probe.mjs
