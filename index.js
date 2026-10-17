@@ -88,7 +88,8 @@ export function apply(ctx, options = {}) {
       if ((options.enabled?.get ? options.enabled.get() : options.enabled) === false) throw new Error('辅助模型调用已关闭，请在设置 → 用途模型路由中开启');
       const signal = AbortSignal.any([exec.signal,lifetime.signal]);
       return callModel(await currentConfig(),args,{signal,readImage:async(path,maxBytes)=>{
-        const target = await ctx.fs.resolve(path,{cwd:exec.agent?.session.header.cwd,signal});
+        const cwd = exec.agent?.session?.header?.cwd;
+        const target = await ctx.fs.resolve(path, cwd ? {cwd,signal} : {signal});
         const info = await ctx.fs.stat(target,signal);
         if (!info || info.type !== 'file') throw new Error('图片不是可读取的普通文件');
         if (info.size !== undefined && info.size > maxBytes) throw new Error('图片超过配置上限');

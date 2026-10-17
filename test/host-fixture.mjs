@@ -39,7 +39,7 @@ export async function createHostFixture(dir,{html}={}){
       const controller=new AbortController();res.on('close',()=>controller.abort());
       const chunks=[];for await(const b of req)chunks.push(b);
       const request=new Request('http://127.0.0.1'+req.url,{method:req.method,headers:req.headers,body:Buffer.concat(chunks),signal:controller.signal});
-      const result=await host.connection.createSharedFetchHandler('/api').fetch(request);
+      const result=await host.connection.createSharedFetchHandler('/api').fetch(request,{principal:{kind:'owner'}});
       res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));return;
     }
     try{

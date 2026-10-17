@@ -49,6 +49,24 @@ npm pack
 
 这些结果不代表所有服务商、桌面版本或网络都已测试。仓库演示图由作者提供，展示实际 Harness 会话；发布前回归使用本地测试接口，不使用作者的真实 API Key。
 
-已验证组件版本：Harness `0.2.0-rc.2`，Cordis `4.0.4`。SDK 变化时先针对设置、RPC 和卸载契约补验，不绕过错误，也不覆盖用户配置来规避兼容问题。
+已验证组件版本：Harness `0.2.1-rc.2`，Cordis `4.0.5`，schemastery `3.18.5`；同时兼容 `0.2.0-rc.2`。SDK 变化时先针对设置、RPC 和卸载契约补验，不绕过错误，也不覆盖用户配置来规避兼容问题。
+
+### 兼容声明与内核门禁
+
+内核在启动时读取插件 `package.json` 判断能否启用（`@deepseek-ai/dsh-app-boot` 的 `evaluatePluginCompatibility`）。规则是：**只要写了 `engines.dsh`，它就单独决定结果，`peerDependencies` 不再参与判断**；没写 `engines.dsh` 时，才会逐个检查 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 的 peer 范围。
+
+因此把 peer 写成精确版本（如 `"0.2.0-rc.2"`）等于把插件钉死在某一个内核上——内核一升级，插件就会被判为不兼容并整行禁用，日志以 `disabling profile plugin row` 开头。本仓库改用区间表达：
+
+```json
+"engines": { "node": ">=22", "dsh": ">=0.2.0-rc.2 <0.3.0-0" }
+```
+
+预发布版本参与比较（实现上用了 `includePrerelease: true`），所以 `0.2.1-rc.2` 落在区间内。若确认兼容 0.3 之前的全部补丁版本，保持该写法即可；验证 0.3 后再放宽上界。
+
+### 0.2.1-rc.2 的契约变化
+
+- `connection.createSharedFetchHandler(channel).fetch(request)` → `fetch(request, peer)`，且精确 Fetch 路由要求 `peer.principal.kind === 'owner'`。直接调用时需传 `{principal:{kind:'owner'}}`，否则报 `Cannot read properties of undefined (reading 'principal')`。
+- `@deepseek-ai/dsh-client-connection` 的浏览器入口从 `lib/client.js` 改名为 `lib/client.browser.js`（`exports["./client"]` 的 `browser`/`default` 条件）。测试里按 `exports` 条件解析，不要写死文件名。
+- `@deepseek-ai/dsh-client-store` 不再随内核 `node_modules` 发布（被打进 shell），跑桌面表单回归时需单独提供。
 
 官方依据：[工具开发](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cookbook/adding-a-tool.md)、[配置表单](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/README.md)、[认证连接](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/connection/README.md)、[打包安装](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)。

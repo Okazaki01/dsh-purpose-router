@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,mkdtemp,rm} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
@@ -12,6 +13,11 @@ import {createHostFixture} from './host-fixture.mjs';
 
 const runtime=process.env.DSH_TEST_RUNTIME;
 const require=createRequire(join(runtime,'package.json'));
+// 0.2.1-rc.2 把 Client Connection 的浏览器入口从 lib/client.js 改名为 lib/client.browser.js。
+async function clientEntry(pkg){
+  for(const rel of ['lib/client.browser.js','lib/client.js']) if(existsSync(join(runtime,'node_modules/@deepseek-ai',pkg,rel))) return join(runtime,'node_modules/@deepseek-ai',pkg,rel);
+  throw Error(`找不到 ${pkg} 的浏览器入口`);
+}
 async function load(file){
   let registration;
   runInNewContext(await readFile(file,'utf8'),{window:{__ModuleLoader__:{load:r=>registration=r}},console,crypto:webcrypto,structuredClone,TextEncoder,TextDecoder,URL,setTimeout,clearTimeout,AbortController});
@@ -39,7 +45,7 @@ test('真实桌面按钮 → 官方 Client RPC 地址校验/关联 ID → Host �
   Object.defineProperties(globalThis,{window:{value:dom.window,configurable:true},document:{value:dom.window.document,configurable:true},navigator:{value:dom.window.navigator,configurable:true},IS_REACT_ACT_ENVIRONMENT:{value:true,configurable:true}});
   try{
     fixture=await createHostFixture(dir);
-    const connection=await load(join(runtime,'node_modules/@deepseek-ai/dsh-client-connection/lib/client.js'));
+    const connection=await load(await clientEntry('dsh-client-connection'));
     connection.installConnection(browser,{transport:{fetch:async(input,init)=>{
       wireCalls++;
       assert.equal(String(input),'api/purpose-router/test');

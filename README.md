@@ -9,7 +9,7 @@
 - 每个模型独立设置等待时间，新增模型默认最多等 10 分钟。
 - 保存后，下次辅助调用就使用新配置，不用反复重启。
 
-这是社区插件，适用于 DeepSeek Harness 桌面版。已在官方 `0.2.0-rc.2` 组件环境验证；其他版本请先确认插件能正常启用。你需要准备自己的模型 API，初始模板不附带密钥，也不会自动发出请求。
+这是社区插件，适用于 DeepSeek Harness 桌面版。已在官方 `0.2.1-rc.2` 内核验证，同时兼容 `0.2.0-rc.2`；其他版本请先确认插件能正常启用。你需要准备自己的模型 API，初始模板不附带密钥，也不会自动发出请求。
 
 ## 安装：三种方式，选一种就行
 
@@ -31,7 +31,7 @@ Harness 自带的 plugin_manager 安装到当前桌面配置并启用。
 
 1. 打开 [最新 Release](https://github.com/Okazaki01/dsh-purpose-router/releases/latest)，下载 **`dsh-purpose-router-版本号.tgz`**。
 2. 打开 Harness 左侧 **插件 → 添加插件**。如果出现菜单，选择 **安装第三方插件**。
-3. 在安装来源栏填入安装包的**完整路径**，例如 `C:\Downloads\dsh-purpose-router-0.1.0.tgz`。也可以直接粘贴 Release 中该 `.tgz` 文件的下载链接。
+3. 在安装来源栏填入安装包的**完整路径**，例如 `C:\Downloads\dsh-purpose-router-0.2.0.tgz`。也可以直接粘贴 Release 中该 `.tgz` 文件的下载链接。
 4. 点击 **安装**，完成后选择 **立即启用**；提示需要重启时再重启。
 
 下载的是 Release 里的 `.tgz`，不是 GitHub 自动生成的 `Source code.zip`。安装包已经编译好，无需自己构建。
@@ -43,7 +43,7 @@ Harness 自带的 plugin_manager 安装到当前桌面配置并启用。
 先启动 Harness 一次，再完全退出。在软件安装目录找到 `resources/runtime/cli/bin/dsh.cmd`，用 PowerShell 执行：
 
 ```powershell
-& "你的Harness安装目录\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add "C:\Downloads\dsh-purpose-router-0.1.0.tgz"
+& "你的Harness安装目录\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add "C:\Downloads\dsh-purpose-router-0.2.0.tgz"
 ```
 
 把两处路径换成你电脑上的实际路径，然后重新打开 Harness。这里只借用桌面版自带命令安装同一个插件，使用和配置仍在桌面界面里；不要改用另装的 npm 版 `dsh` 去修改桌面配置，也不要只把文件复制进 `node_modules`。
@@ -102,7 +102,7 @@ Harness 自带的 plugin_manager 安装到当前桌面配置并启用。
 
 ## 常见问题
 
-**配置按钮是灰的？** 先到“插件”页面确认插件已启用、没有加载错误，再回设置点“重新读取配置”。仍不可用时，将插件版本、Harness 版本和错误截图发到 [Issues](https://github.com/Okazaki01/dsh-purpose-router/issues)，不要附 API Key。
+**配置按钮是灰的？** 先到“插件”页面确认插件已启用、没有加载错误，再回设置点“重新读取配置”。若插件显示已启用却一直不可用，检查内核版本是否落在本插件声明的兼容区间内（当前 `0.2.0-rc.2` 至 `0.3.0` 之前）：内核升级后旧插件会被判定不兼容并自动停用，日志里会出现 `disabling profile plugin row` 与 `is incompatible with dsh`。此时升级插件即可。仍不可用时，将插件版本、Harness 版本和错误截图发到 [Issues](https://github.com/Okazaki01/dsh-purpose-router/issues)，不要附 API Key。
 
 **保存后密钥栏变空了？** 正常。重新打开设置不会回显已保存的 Key，留空保存会继续使用原来的 Key。要删除，点“清除已保存的密钥”再保存。密钥保存在 Harness 本地配置中。
 

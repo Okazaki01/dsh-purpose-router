@@ -36,7 +36,7 @@ test('修复版按桌面依赖隔离启动、停用、再次启用：端点与�
   try {
     const fiber=await ctx.plugin(plugin,{});
     assert.equal(fiber.error,undefined);
-    const status=async()=> (await ctx.connection.createSharedFetchHandler('/api').fetch(new Request('http://localhost/api/purpose-router/test',{method:'POST',body:'{}'}))).status;
+    const status=async()=> (await ctx.connection.createSharedFetchHandler('/api').fetch(new Request('http://localhost/api/purpose-router/test',{method:'POST',body:'{}'}),{principal:{kind:'owner'}})).status;
     assert.equal(await status(),400);
     assert.equal(ctx.tools.schemas().filter(x=>x.name.startsWith('model_router_')).length,3);
     await ctx.registry.delete(plugin);
